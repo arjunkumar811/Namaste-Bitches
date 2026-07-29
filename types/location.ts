@@ -6,11 +6,11 @@ export interface GeoCoordinates {
   accuracy?: number;
 }
 
-export interface RoomWithDistance extends Room {
+export type RoomWithDistance = Omit<Room, "latitude" | "longitude" | "password"> & {
   distance: number; // in meters
   formattedDistance: string; // e.g. "250m" or "1.2km"
   userCount?: number;
-}
+};
 
 export interface SectorData {
   geohash: string;

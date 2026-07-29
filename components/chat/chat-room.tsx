@@ -4,13 +4,14 @@ import React, { useState, useEffect, useRef } from "react";
 import { ChatMessage } from "@/types/chat";
 import { RoomWithDistance } from "@/types/location";
 import { getRoomMessagesAction } from "@/actions/chat.actions";
+import { joinPrivateRoomAction } from "@/actions/room.actions";
 import { MessageBubble } from "@/components/chat/message-bubble";
 import { ChatInput } from "@/components/chat/chat-input";
 import { TypingIndicator } from "@/components/chat/typing-indicator";
 import { IdentityBadge } from "@/components/auth/identity-badge";
 import { ShareModal } from "@/components/chat/share-modal";
 import { useRealtime } from "@/hooks/use-realtime";
-import { Users, Radio, Share2, Shield, Sparkles, MapPin } from "lucide-react";
+import { Users, Radio, Share2, Shield, Sparkles, MapPin, Lock, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface ChatRoomProps {
@@ -23,6 +24,13 @@ export function ChatRoom({ room }: ChatRoomProps) {
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
   const [copied, setCopied] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isUnauthorized, setIsUnauthorized] = useState(false);
+  const [passwordInput, setPasswordInput] = useState("");
+  const [isJoining, setIsJoining] = useState(false);
+  const [joinError, setJoinError] = useState("");
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = (smooth = true) => {
@@ -33,11 +41,43 @@ export function ChatRoom({ room }: ChatRoomProps) {
   const loadMessages = async () => {
     setIsLoading(true);
     const res = await getRoomMessagesAction(room.id);
+    if (res.isUnauthorized) {
+      setIsUnauthorized(true);
+      setIsLoading(false);
+      return;
+    }
     if (res.success && res.messages) {
       setMessages(res.messages);
+      setHasMore(res.messages.length === 50);
     }
     setIsLoading(false);
     setTimeout(() => scrollToBottom(false), 100);
+  };
+
+  const loadOlderMessages = async () => {
+    if (!messages.length || isLoadingMore || !hasMore) return;
+    setIsLoadingMore(true);
+    const oldestId = messages[0].id;
+    const res = await getRoomMessagesAction(room.id, oldestId);
+    if (res.success && res.messages) {
+      setMessages((prev) => [...res.messages!, ...prev]);
+      setHasMore(res.messages.length === 50);
+    }
+    setIsLoadingMore(false);
+  };
+
+  const handleJoinPrivate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsJoining(true);
+    setJoinError("");
+    const res = await joinPrivateRoomAction(room.id, passwordInput);
+    if (res.success) {
+      setIsUnauthorized(false);
+      loadMessages();
+    } else {
+      setJoinError(res.error || "Incorrect password");
+    }
+    setIsJoining(false);
   };
 
   useEffect(() => {
@@ -117,8 +157,39 @@ export function ChatRoom({ room }: ChatRoomProps) {
       </div>
 
       {/* Messages Feed Area */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-        {isLoading ? (
+      <div className="flex-1 overflow-y-auto p-6 space-y-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent relative">
+        {isUnauthorized ? (
+          <div className="flex flex-col items-center justify-center h-full max-w-sm mx-auto">
+            <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 mb-6">
+              <Lock className="w-8 h-8" />
+            </div>
+            <h2 className="text-xl font-semibold text-white tracking-tight mb-2">Private Room</h2>
+            <p className="text-sm text-zinc-400 text-center mb-8 leading-relaxed">
+              This room is password protected. Please enter the password to join the conversation.
+            </p>
+            <form onSubmit={handleJoinPrivate} className="w-full space-y-4">
+              <div className="space-y-1">
+                <input
+                  type="password"
+                  value={passwordInput}
+                  onChange={(e) => setPasswordInput(e.target.value)}
+                  placeholder="Enter password..."
+                  className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/[0.08] text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500/50 transition-colors"
+                  disabled={isJoining}
+                />
+                {joinError && <p className="text-xs text-red-400 mt-1">{joinError}</p>}
+              </div>
+              <button
+                type="submit"
+                disabled={isJoining || !passwordInput}
+                className="w-full py-3 rounded-xl bg-white hover:bg-zinc-200 text-black font-semibold text-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                <span>{isJoining ? "Joining..." : "Join Room"}</span>
+                {!isJoining && <ArrowRight className="w-4 h-4" />}
+              </button>
+            </form>
+          </div>
+        ) : isLoading ? (
           <div className="flex flex-col items-center justify-center h-full gap-3 text-zinc-500 text-xs">
             <div className="w-6 h-6 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
             <span>Loading messages...</span>
@@ -131,35 +202,50 @@ export function ChatRoom({ room }: ChatRoomProps) {
             </p>
           </div>
         ) : (
-          <AnimatePresence>
-            {messages.map((msg) => (
-              <MessageBubble
-                key={msg.id}
-                message={msg}
-                onReactionUpdate={loadMessages}
-                onDeleteUpdate={loadMessages}
-              />
-            ))}
-          </AnimatePresence>
+          <div className="space-y-2">
+            {hasMore && (
+              <div className="flex justify-center py-4">
+                <button
+                  onClick={loadOlderMessages}
+                  disabled={isLoadingMore}
+                  className="px-4 py-1.5 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-medium text-zinc-300 transition-colors"
+                >
+                  {isLoadingMore ? "Loading..." : "Load older messages"}
+                </button>
+              </div>
+            )}
+            <AnimatePresence>
+              {messages.map((msg) => (
+                <MessageBubble
+                  key={msg.id}
+                  message={msg}
+                  onReactionUpdate={loadMessages}
+                  onDeleteUpdate={loadMessages}
+                />
+              ))}
+            </AnimatePresence>
+          </div>
         )}
 
         <div ref={messagesEndRef} />
       </div>
 
       {/* Bottom Input Section */}
-      <div className="p-4 border-t border-white/[0.08] bg-[#111216]">
-        <TypingIndicator typingUsers={typingUsers} />
-        <ChatInput roomId={room.id} onMessageSent={(newMsg) => {
-          setMessages((prev) => {
-            if (prev.some((m) => m.id === newMsg.id)) return prev;
-            return [...prev, newMsg];
-          });
-          setTimeout(() => scrollToBottom(true), 50);
-        }} />
-        <div className="flex items-center justify-center gap-1 mt-2 text-[11px] text-zinc-500">
-          <span>Messages disappear when timers expire or when rooms empty.</span>
+      {!isUnauthorized && (
+        <div className="p-4 border-t border-white/[0.08] bg-[#111216]">
+          <TypingIndicator typingUsers={typingUsers} />
+          <ChatInput roomId={room.id} onMessageSent={(newMsg) => {
+            setMessages((prev) => {
+              if (prev.some((m) => m.id === newMsg.id)) return prev;
+              return [...prev, newMsg];
+            });
+            setTimeout(() => scrollToBottom(true), 50);
+          }} />
+          <div className="flex items-center justify-center gap-1 mt-2 text-[11px] text-zinc-500">
+            <span>Messages disappear when timers expire or when rooms empty.</span>
+          </div>
         </div>
-      </div>
+      )}
 
       <ShareModal
         isOpen={isShareOpen}

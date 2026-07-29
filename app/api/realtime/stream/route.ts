@@ -1,12 +1,25 @@
 import { NextRequest } from "next/server";
 import { realtimeEmitter } from "@/services/realtime.service";
 import { RealtimeEvent } from "@/types/realtime";
+import { prisma } from "@/lib/prisma";
+import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const channel = searchParams.get("channel") || "all";
+
+  if (channel.startsWith("room:")) {
+    const roomId = channel.replace("room:", "");
+    const room = await prisma.room.findUnique({ where: { id: roomId }, select: { isPrivate: true }});
+    if (room?.isPrivate) {
+      const cookieStore = await cookies();
+      if (!cookieStore.has(`room_access_${roomId}`)) {
+        return new Response("Unauthorized", { status: 401 });
+      }
+    }
+  }
 
   const stream = new ReadableStream({
     start(controller) {

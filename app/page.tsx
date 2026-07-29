@@ -58,15 +58,7 @@ export default function Home() {
 
         {/* Hero Section */}
         <section className="relative px-4 sm:px-6 pt-24 pb-16 max-w-4xl mx-auto w-full text-center">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-zinc-300 text-xs mb-6 select-none"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Location-based chat rooms</span>
-          </motion.div>
+
 
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}

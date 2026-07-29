@@ -3,6 +3,10 @@
 import { cookies } from "next/headers";
 import { AuthService, SESSION_COOKIE_NAME } from "@/services/auth.service";
 import { SessionPayload } from "@/types/auth";
+import { RateLimiter } from "@/lib/rate-limit";
+
+// 5 attempts per 15 minutes
+const adminRateLimiter = new RateLimiter(5, 15 * 60 * 1000);
 
 /**
  * Gets the current active session or returns null
@@ -74,6 +78,11 @@ export async function rerollIdentityAction(): Promise<{ success: boolean; identi
 export async function activateAdminAction(passkey: string): Promise<{ success: boolean; error?: string }> {
   const session = await getSession();
   if (!session) return { success: false, error: "No active session" };
+
+  const rateCheck = adminRateLimiter.check(session.userId);
+  if (!rateCheck.success) {
+    return { success: false, error: "Too many attempts. Please try again later." };
+  }
 
   return AuthService.activateAdmin(session.userId, passkey);
 }

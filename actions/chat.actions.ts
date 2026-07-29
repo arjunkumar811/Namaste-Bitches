@@ -4,11 +4,26 @@ import { getSession } from "@/actions/auth.actions";
 import { ChatService } from "@/services/chat.service";
 import { RealtimeService } from "@/services/realtime.service";
 import { ChatMessage, SendMessagePayload } from "@/types/chat";
+import { prisma } from "@/lib/prisma";
+import { cookies } from "next/headers";
 
-export async function getRoomMessagesAction(roomId: string): Promise<{ success: boolean; messages?: ChatMessage[]; error?: string }> {
+async function hasRoomAccess(roomId: string): Promise<boolean> {
+  const room = await prisma.room.findUnique({ where: { id: roomId }, select: { isPrivate: true } });
+  if (!room) return false;
+  if (!room.isPrivate) return true;
+  
+  const cookieStore = await cookies();
+  return cookieStore.has(`room_access_${roomId}`);
+}
+
+export async function getRoomMessagesAction(roomId: string, cursor?: string): Promise<{ success: boolean; messages?: ChatMessage[]; error?: string; isUnauthorized?: boolean }> {
   try {
+    if (!(await hasRoomAccess(roomId))) {
+      return { success: false, error: "Unauthorized access to private room", isUnauthorized: true };
+    }
+
     const session = await getSession();
-    const messages = await ChatService.getMessages(roomId, session?.userId);
+    const messages = await ChatService.getMessages(roomId, session?.userId, 50, cursor);
     return { success: true, messages };
   } catch (error) {
     console.error("Failed to get messages:", error);
@@ -21,6 +36,10 @@ export async function sendMessageAction(payload: SendMessagePayload): Promise<{ 
     const session = await getSession();
     if (!session) {
       return { success: false, error: "Not authenticated. Please wait for guest login." };
+    }
+
+    if (!(await hasRoomAccess(payload.roomId))) {
+      return { success: false, error: "Unauthorized access to private room" };
     }
 
     if (!payload.content || payload.content.trim().length === 0) {
