@@ -35,7 +35,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    initAuth();
+    // Delay slightly to prevent "Router action dispatched before initialization" error
+    // which occurs when Server Actions modify cookies before hydration completes.
+    const timeout = setTimeout(() => {
+      initAuth();
+    }, 100);
+    
+    return () => clearTimeout(timeout);
   }, []);
 
   const login = async () => {
