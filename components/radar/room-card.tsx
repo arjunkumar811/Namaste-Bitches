@@ -44,7 +44,7 @@ export function RoomCard({ room, index = 0 }: RoomCardProps) {
       <Card
         ref={cardRef}
         onMouseMove={handleMouseMove}
-        className="group relative flex flex-col justify-between h-full p-5 overflow-hidden bg-[#111216]/80 backdrop-blur-md border border-white/[0.08] hover:border-white/[0.2] transition-colors"
+        className="group relative flex flex-col justify-between h-full p-5 overflow-hidden bg-[#111216]/80 backdrop-blur-md border border-white/[0.08] hover:border-white/[0.2] transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
       >
         <motion.div
           className="pointer-events-none absolute -inset-px rounded-xl opacity-0 transition duration-300 group-hover:opacity-100"

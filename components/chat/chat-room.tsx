@@ -4,14 +4,16 @@ import React, { useState, useEffect, useRef } from "react";
 import { ChatMessage } from "@/types/chat";
 import { RoomWithDistance } from "@/types/location";
 import { getRoomMessagesAction } from "@/actions/chat.actions";
-import { joinPrivateRoomAction } from "@/actions/room.actions";
+import { joinPrivateRoomAction, deleteRoomAction } from "@/actions/room.actions";
 import { MessageBubble } from "@/components/chat/message-bubble";
 import { ChatInput } from "@/components/chat/chat-input";
 import { TypingIndicator } from "@/components/chat/typing-indicator";
 import { IdentityBadge } from "@/components/auth/identity-badge";
 import { ShareModal } from "@/components/chat/share-modal";
 import { useRealtime } from "@/hooks/use-realtime";
-import { Users, Radio, Share2, Shield, Sparkles, MapPin, Lock, ArrowRight } from "lucide-react";
+import { useAuth } from "@/components/providers/auth-provider";
+import { useRouter } from "next/navigation";
+import { Users, Radio, Share2, Shield, Sparkles, MapPin, Lock, ArrowRight, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface ChatRoomProps {
@@ -30,6 +32,10 @@ export function ChatRoom({ room }: ChatRoomProps) {
   const [joinError, setJoinError] = useState("");
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const router = useRouter();
+  const { user } = useAuth();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -145,6 +151,28 @@ export function ChatRoom({ room }: ChatRoomProps) {
         <div className="flex items-center gap-3">
           <IdentityBadge />
           
+          {user?.isAdmin && (
+            <button
+              onClick={async () => {
+                if (!confirm("Are you sure you want to delete this room? This action cannot be undone.")) return;
+                setIsDeleting(true);
+                const res = await deleteRoomAction(room.id);
+                if (res.success) {
+                  router.push("/");
+                } else {
+                  setIsDeleting(false);
+                  alert(res.error || "Failed to delete room");
+                }
+              }}
+              disabled={isDeleting}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-xs font-medium text-red-400 hover:text-red-300 transition-colors cursor-pointer disabled:opacity-50"
+              title="Delete Room"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>{isDeleting ? "Deleting..." : "Delete"}</span>
+            </button>
+          )}
+
           <button
             onClick={handleShare}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-medium text-zinc-300 hover:text-white transition-colors cursor-pointer"

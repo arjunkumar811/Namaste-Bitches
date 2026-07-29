@@ -81,7 +81,7 @@ export async function deleteMessageAction(messageId: string): Promise<{ success:
     const session = await getSession();
     if (!session) return { success: false };
 
-    const success = await ChatService.deleteMessage(session.userId, messageId);
+    const success = await ChatService.deleteMessage(session.userId, messageId, session.isAdmin);
     return { success };
   } catch {
     return { success: false };

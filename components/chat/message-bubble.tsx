@@ -64,7 +64,7 @@ export function MessageBubble({ message, onReactionUpdate, onDeleteUpdate }: Mes
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.15 }}
-      className={`group relative flex gap-3 my-3 max-w-[85%] sm:max-w-[75%] ${
+      className={`group relative flex gap-3 my-3 max-w-[85%] sm:max-w-[75%] transition-all duration-300 hover:scale-[1.01] hover:brightness-110 ${
         message.isOwn ? "ml-auto flex-row-reverse" : "mr-auto flex-row"
       }`}
     >

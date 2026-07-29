@@ -207,3 +207,29 @@ export async function joinPrivateRoomAction(roomId: string, passwordAttempt: str
     return { success: false, error: "Authentication failed." };
   }
 }
+
+/**
+ * Delete a room (Admin only)
+ */
+export async function deleteRoomAction(roomId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const session = await getSession();
+    if (!session || !session.isAdmin) {
+      return { success: false, error: "Unauthorized. Admin access required." };
+    }
+
+    await prisma.room.update({
+      where: { id: roomId },
+      data: { isActive: false }
+    });
+
+    // Notify listeners
+    await RealtimeService.broadcast("all", "room:deleted", { roomId });
+    await RealtimeService.broadcast(`room:${roomId}`, "room:deleted", { roomId });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to delete room:", error);
+    return { success: false, error: "Failed to delete room." };
+  }
+}

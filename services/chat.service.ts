@@ -133,9 +133,10 @@ export class ChatService {
   /**
    * Delete a message
    */
-  static async deleteMessage(userId: string, messageId: string): Promise<boolean> {
+  static async deleteMessage(userId: string, messageId: string, isAdmin?: boolean): Promise<boolean> {
     const msg = await prisma.message.findUnique({ where: { id: messageId } });
-    if (!msg || msg.userId !== userId) return false;
+    if (!msg) return false;
+    if (!isAdmin && msg.userId !== userId) return false;
 
     await prisma.message.update({
       where: { id: messageId },
