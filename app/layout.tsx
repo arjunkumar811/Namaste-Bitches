@@ -25,9 +25,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" suppressHydrationWarning>
       <body
         className={`${outfit.variable} ${jetbrainsMono.variable} font-sans antialiased bg-black text-zinc-100 selection:bg-emerald-500 selection:text-black min-h-screen flex flex-col`}
+        suppressHydrationWarning
       >
         <AuthProvider>
           <WelcomeModal />

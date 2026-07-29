@@ -41,6 +41,7 @@ export function RoomFilters({ filters, onFilterChange }: RoomFiltersProps) {
             onChange={(e) => onFilterChange({ search: e.target.value })}
             placeholder="Search nearby rooms..."
             className="w-full pl-9 pr-8 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08] text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400 transition-colors"
+            suppressHydrationWarning
           />
           {filters.search && (
             <button
@@ -62,6 +63,7 @@ export function RoomFilters({ filters, onFilterChange }: RoomFiltersProps) {
               value={filters.radius}
               onChange={(e) => onFilterChange({ radius: Number(e.target.value) })}
               className="bg-transparent font-medium text-white focus:outline-none cursor-pointer"
+              suppressHydrationWarning
             >
               {RADIUS_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value} className="bg-[#111216] text-white">
@@ -79,6 +81,7 @@ export function RoomFilters({ filters, onFilterChange }: RoomFiltersProps) {
               value={filters.sortBy}
               onChange={(e) => onFilterChange({ sortBy: e.target.value as "distance" | "active" | "newest" })}
               className="bg-transparent font-medium text-white focus:outline-none cursor-pointer"
+              suppressHydrationWarning
             >
               <option value="distance" className="bg-[#111216] text-white">Closest</option>
               <option value="active" className="bg-[#111216] text-white">Most active</option>
