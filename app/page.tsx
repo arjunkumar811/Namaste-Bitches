@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Navbar } from "@/components/layout/navbar";
 import { useLocation } from "@/hooks/use-location";
 import { getNearbyRooms } from "@/actions/room.actions";
 import { RoomWithDistance, RoomFilterState } from "@/types/location";
@@ -50,52 +49,26 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0c] text-zinc-100 flex flex-col relative overflow-hidden">
-      <Spotlight className="-top-40 left-0 md:left-60 md:-top-20" />
-      
-      <div className="relative z-10">
-        <Navbar onOpenCreateModal={() => setIsCreateOpen(true)} />
-
-        {/* Hero Section */}
-        <section className="relative px-4 sm:px-6 pt-24 pb-16 max-w-4xl mx-auto w-full text-center">
-
-
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-4xl sm:text-6xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-white to-white/70 max-w-2xl mx-auto leading-[1.15]"
+    <div className="flex-1 bg-background text-foreground flex flex-col relative overflow-hidden h-full">
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col w-full h-full">
+        {/* Discord-style Header */}
+        <header className="h-12 border-b border-border flex items-center px-4 justify-between shrink-0 bg-background z-10">
+          <div className="flex items-center gap-2">
+            <Compass className="w-5 h-5 text-muted-foreground" />
+            <h1 className="font-semibold text-[15px]">Discover Rooms</h1>
+          </div>
+          <Button
+            onClick={() => setIsCreateOpen(true)}
+            size="sm"
+            className="h-7 text-xs px-3 bg-primary text-primary-foreground hover:bg-primary/90 rounded"
           >
-            Chat anonymously with people around you.
-          </motion.h1>
+            Create room
+          </Button>
+        </header>
 
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-sm sm:text-base text-zinc-400 max-w-lg mx-auto mt-6 leading-relaxed"
-          >
-            Discover local chat rooms based on approximate distance. No sign-up required, no phone numbers, and no message history stored.
-          </motion.p>
-
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="mt-10 flex items-center justify-center gap-4"
-          >
-            <Button
-              onClick={() => setIsCreateOpen(true)}
-              size="lg"
-              className="rounded-full bg-white text-black hover:bg-zinc-200 shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] transition-all font-semibold"
-            >
-              Create room <Sparkles className="ml-2 w-4 h-4" />
-            </Button>
-          </motion.div>
-        </section>
-
-        {/* Main Content */}
-        <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 w-full pb-16">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 scrollbar-thin">
+          <div className="max-w-[1200px] mx-auto w-full">
         <AnimatePresence>
           {isUsingFallback && (
             <motion.div
@@ -218,22 +191,8 @@ export default function Home() {
         )}
 
         <FeaturesAndFaq />
-      </main>
-
-      {/* Footer */}
-      <footer className="w-full border-t border-white/[0.08] py-8 px-4 text-center text-xs text-zinc-500">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-zinc-400">NamasteBitches</span>
-            <span>— Local anonymous chat</span>
-          </div>
-          <div className="flex items-center gap-3 text-zinc-500">
-            <span>No sign-up required</span>
-            <span>•</span>
-            <span>No chat history saved</span>
-          </div>
         </div>
-      </footer>
+      </main>
 
       <CreateRoomModal
         isOpen={isCreateOpen}
@@ -244,7 +203,6 @@ export default function Home() {
           setRooms((prev) => [newRoom, ...prev]);
         }}
       />
-      </div>
     </div>
   );
 }
