@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { RealtimeService } from "@/services/realtime.service";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
+import { ChatService } from "@/services/chat.service";
+import { RealtimeEvent } from "@/types/realtime";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +21,40 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
     }
+
+    // Serverless (Vercel) doesn't share memory between instances, so we MUST fetch
+    // new messages from the Database directly to enable "live" chat polling.
+    const newMessages = await prisma.message.findMany({
+      where: {
+        roomId,
+        createdAt: { gt: new Date(since) },
+        isDeleted: false,
+      },
+      include: {
+        user: true,
+        reactions: { include: { user: true } },
+      },
+      orderBy: { createdAt: "asc" }
+    });
+
+    const dbEvents: RealtimeEvent[] = newMessages.map(msg => ({
+      channel,
+      event: "message:new",
+      data: ChatService.formatMessage(msg),
+      timestamp: msg.createdAt.getTime(),
+    }));
+
+    // Also get in-memory events for local dev (which includes typing indicators)
+    const memEvents = RealtimeService.getEventsSince(channel, since);
+    
+    // Merge events from DB and memory
+    const allEvents = [...dbEvents, ...memEvents];
+    const uniqueEvents = Array.from(
+      new Map(allEvents.map(e => [`${e.event}-${e.timestamp}`, e])).values()
+    );
+    uniqueEvents.sort((a, b) => a.timestamp - b.timestamp);
+
+    return NextResponse.json({ events: uniqueEvents, timestamp: Date.now() });
   }
 
   const events = RealtimeService.getEventsSince(channel, since);

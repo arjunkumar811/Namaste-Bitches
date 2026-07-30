@@ -57,11 +57,16 @@ export function useRealtime(
       });
 
       eventSource.onerror = () => {
-        // If SSE fails or disconnects, fallback to polling after 3 seconds if not reconnected
+        // If SSE fails or disconnects, ensure polling is running
         if (!pollInterval) {
           startPollingFallback();
         }
       };
+
+      // In serverless environments (Vercel), SSE doesn't share memory across instances.
+      // We must start polling immediately to ensure we fetch messages from the DB
+      // that were created by other lambda instances.
+      startPollingFallback();
     } catch {
       startPollingFallback();
     }
