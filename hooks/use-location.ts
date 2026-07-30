@@ -53,15 +53,17 @@ export function useLocation() {
       setIsLoading(false);
     };
 
-    // Request current position ONLY ONCE to prevent constant GPS bouncing on mobile phones
-    // which causes the nearby rooms list to shuffle/refresh every 2-3 seconds.
-    navigator.geolocation.getCurrentPosition(handleSuccess, handleError, {
-      enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 60000,
-    });
+    // Request current position with robust options.
+    // Disabling enableHighAccuracy allows mobile browsers to use cellular/wifi 
+    // triangulation which returns instantly instead of timing out waiting for GPS satellites.
+    const geoOptions = {
+      enableHighAccuracy: false,
+      timeout: 15000,
+      maximumAge: 300000, // Cache for 5 mins to speed up reload
+    };
 
-    // Cleanup not needed since we aren't using watchPosition anymore
+    navigator.geolocation.getCurrentPosition(handleSuccess, handleError, geoOptions);
+
     return () => {};
   }, []);
 
@@ -82,6 +84,11 @@ export function useLocation() {
         setError(err.message);
         setIsUsingFallback(true);
         setIsLoading(false);
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 15000,
+        maximumAge: 0, // Force a fresh read on manual retry
       }
     );
   };
