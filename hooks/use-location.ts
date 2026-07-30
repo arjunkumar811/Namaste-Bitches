@@ -25,10 +25,21 @@ export function useLocation() {
     }
 
     const handleSuccess = (position: GeolocationPosition) => {
-      setCoordinates({
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-        accuracy: position.coords.accuracy,
+      setCoordinates((prev) => {
+        // Only update if moved significantly (diff > 0.0001 degrees ~ 11 meters)
+        // This prevents the UI from refreshing every 2-3 seconds due to GPS jitter
+        if (
+          prev &&
+          Math.abs(prev.latitude - position.coords.latitude) < 0.0001 &&
+          Math.abs(prev.longitude - position.coords.longitude) < 0.0001
+        ) {
+          return prev;
+        }
+        return {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+        };
       });
       setError(null);
       setIsUsingFallback(false);
@@ -42,23 +53,16 @@ export function useLocation() {
       setIsLoading(false);
     };
 
-    // Request current position
+    // Request current position ONLY ONCE to prevent constant GPS bouncing on mobile phones
+    // which causes the nearby rooms list to shuffle/refresh every 2-3 seconds.
     navigator.geolocation.getCurrentPosition(handleSuccess, handleError, {
       enableHighAccuracy: true,
       timeout: 10000,
       maximumAge: 60000,
     });
 
-    // Watch position for movement
-    const watchId = navigator.geolocation.watchPosition(handleSuccess, handleError, {
-      enableHighAccuracy: false,
-      timeout: 20000,
-      maximumAge: 120000,
-    });
-
-    return () => {
-      navigator.geolocation.clearWatch(watchId);
-    };
+    // Cleanup not needed since we aren't using watchPosition anymore
+    return () => {};
   }, []);
 
   const requestLocation = () => {

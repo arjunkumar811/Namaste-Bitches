@@ -191,7 +191,7 @@ export default function Home() {
         </div>
 
         {/* Rooms Display */}
-        {isLoadingRooms || isLocLoading ? (
+        {(isLoadingRooms && rooms.length === 0) || isLocLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 py-8">
             {[0, 1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="h-44 rounded-2xl bg-[#111216] border border-white/[0.06] animate-pulse p-5 flex flex-col justify-between">
