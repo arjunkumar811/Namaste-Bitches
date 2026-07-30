@@ -192,7 +192,8 @@ export default function Home() {
 
         <FeaturesAndFaq />
         </div>
-      </main>
+      </div>
+    </main>
 
       <CreateRoomModal
         isOpen={isCreateOpen}

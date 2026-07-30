@@ -7,7 +7,8 @@ export type RealtimeEventType =
   | "user:leave"
   | "typing:start"
   | "typing:stop"
-  | "room:update";
+  | "room:update"
+  | "room:deleted";
 
 export interface RealtimeEvent<T = unknown> {
   channel: string;
