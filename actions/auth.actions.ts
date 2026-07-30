@@ -87,3 +87,13 @@ export async function activateAdminAction(passkey: string): Promise<{ success: b
   return AuthService.activateAdmin(session.userId, passkey);
 }
 
+/**
+ * Updates user settings (avatar and accent color)
+ */
+export async function updateUserSettingsAction(avatar: string, accentColor: string): Promise<{ success: boolean; identity?: { username: string; avatar: string; accentColor: string; isAdmin?: boolean } }> {
+  const session = await getSession();
+  if (!session) return { success: false };
+
+  const newIdentity = await AuthService.updateUserSettings(session.userId, avatar, accentColor);
+  return { success: true, identity: newIdentity };
+}

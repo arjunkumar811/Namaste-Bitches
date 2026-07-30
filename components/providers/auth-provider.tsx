@@ -11,6 +11,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   rerollIdentity: () => Promise<void>;
   activateAdmin: (passkey: string) => Promise<{ success: boolean; error?: string }>;
+  updateIdentity: (avatar: string, accentColor: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -89,8 +90,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateIdentity = async (avatar: string, accentColor: string) => {
+    if (!user) return;
+    try {
+      const { updateUserSettingsAction } = await import("@/actions/auth.actions");
+      const res = await updateUserSettingsAction(avatar, accentColor);
+      if (res.success && res.identity) {
+        setUser((prev) => prev ? { ...prev, ...res.identity! } : null);
+      }
+    } catch (error) {
+      console.error("Failed to update identity:", error);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout, rerollIdentity, activateAdmin }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout, rerollIdentity, activateAdmin, updateIdentity }}>
       {children}
     </AuthContext.Provider>
   );

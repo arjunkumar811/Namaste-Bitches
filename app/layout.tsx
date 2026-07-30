@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Inter, Outfit, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { WelcomeModal } from "@/components/auth/welcome-modal";
-import { Sidebar } from "@/components/layout/sidebar";
 
-const inter = Inter({
+const outfit = Outfit({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-outfit",
 });
 
 const jetbrainsMono = JetBrains_Mono({
@@ -28,15 +27,12 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <body
-        className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased h-screen w-screen flex flex-row overflow-hidden bg-background`}
+        className={`${outfit.variable} ${jetbrainsMono.variable} font-sans antialiased bg-black text-zinc-100 selection:bg-emerald-500 selection:text-black min-h-screen flex flex-col`}
         suppressHydrationWarning
       >
         <AuthProvider>
           <WelcomeModal />
-          <Sidebar />
-          <div className="flex-1 flex flex-col h-full overflow-hidden bg-background">
-            {children}
-          </div>
+          <div className="flex-1 flex flex-col">{children}</div>
         </AuthProvider>
       </body>
     </html>

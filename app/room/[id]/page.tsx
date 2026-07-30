@@ -38,18 +38,8 @@ export default async function RoomPage({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-zinc-950 to-black text-white flex flex-col">
-      <Navbar />
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-        <div className="my-2">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 text-xs font-mono text-zinc-400 hover:text-emerald-400 transition-colors py-1"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Return to Radar Grid</span>
-          </Link>
-        </div>
+    <div className="h-screen bg-black text-white flex flex-col overflow-hidden">
+      <main className="flex-1 w-full h-full">
         <ChatRoom room={room} />
       </main>
     </div>

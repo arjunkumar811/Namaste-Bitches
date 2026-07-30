@@ -99,7 +99,7 @@ export function RoomCard({ room, index = 0 }: RoomCardProps) {
           </div>
 
           <Link href={`/room/${room.id || room.slug}`}>
-            <Button variant="ghost" size="sm" className="h-8 px-3 text-xs bg-white text-black hover:bg-zinc-200 hover:text-black group-hover:shadow-[0_0_15px_rgba(255,255,255,0.2)] transition-all">
+            <Button variant="ghost" size="sm" className="h-8 px-3 text-xs bg-white text-black hover:bg-zinc-200 hover:text-black group-hover:shadow-[0_0_15px_rgba(255,255,255,0.2)] transition-all cursor-pointer hover:scale-105 active:scale-95">
               <span>Join room</span>
               <ArrowRight className="w-3.5 h-3.5 ml-1 group-hover:translate-x-1 transition-transform" />
             </Button>

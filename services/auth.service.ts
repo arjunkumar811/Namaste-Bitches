@@ -131,4 +131,15 @@ export class AuthService {
 
     return { success: true };
   }
+
+  /**
+   * Updates user settings (avatar and accent color)
+   */
+  static async updateUserSettings(userId: string, avatar: string, accentColor: string): Promise<{ username: string; avatar: string; accentColor: string; isAdmin: boolean }> {
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: { avatar, accentColor },
+    });
+    return { username: user.username, avatar: user.avatar, accentColor: user.accentColor, isAdmin: user.isAdmin };
+  }
 }

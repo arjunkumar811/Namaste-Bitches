@@ -117,7 +117,7 @@ export function RadarView({ rooms }: RadarViewProps) {
             </div>
 
             <Link href={`/room/${selectedRoom.id || selectedRoom.slug}`} className="block pt-1">
-              <button className="w-full py-2 rounded-lg bg-white hover:bg-zinc-200 text-black font-medium text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer">
+              <button className="w-full py-2 rounded-lg bg-white hover:bg-zinc-200 text-black font-medium text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer hover:scale-105 active:scale-95">
                 <span>Join room</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>

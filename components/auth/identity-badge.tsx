@@ -2,9 +2,10 @@
 
 import React, { useState } from "react";
 import { useAuth } from "@/components/providers/auth-provider";
-import { RefreshCw, User, Shield, Lock, X } from "lucide-react";
+import { RefreshCw, User, Shield, Settings, Lock, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { SettingsModal } from "@/components/auth/settings-modal";
 import {
   Dialog,
   DialogContent,
@@ -17,6 +18,7 @@ export function IdentityBadge({ showReroll = true }: { showReroll?: boolean }) {
   const { user, isLoading, rerollIdentity, activateAdmin } = useAuth();
   const [isSpinning, setIsSpinning] = useState(false);
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [passkey, setPasskey] = useState("");
   const [adminError, setAdminError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -94,6 +96,14 @@ export function IdentityBadge({ showReroll = true }: { showReroll?: boolean }) {
             </button>
           )}
 
+          <button
+            onClick={() => setIsSettingsModalOpen(true)}
+            title="Identity settings"
+            className="p-1 rounded-md hover:bg-white/[0.06] text-zinc-500 hover:text-zinc-300 transition-colors cursor-pointer"
+          >
+            <Settings className="w-3.5 h-3.5" />
+          </button>
+
           {showReroll && (
             <button
               onClick={handleReroll}
@@ -155,6 +165,10 @@ export function IdentityBadge({ showReroll = true }: { showReroll?: boolean }) {
           </form>
         </DialogContent>
       </Dialog>
+      <SettingsModal 
+        isOpen={isSettingsModalOpen}
+        onClose={() => setIsSettingsModalOpen(false)}
+      />
     </>
   );
 }

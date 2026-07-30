@@ -15,6 +15,29 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { useRouter } from "next/navigation";
 import { Users, Radio, Share2, Shield, Sparkles, MapPin, Lock, ArrowRight, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { Box, AppBar, Toolbar, Typography, IconButton, Paper, Button, TextField, CircularProgress, Chip, Avatar } from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import DeleteIcon from '@mui/icons-material/Delete';
+import ShareIcon from '@mui/icons-material/Share';
+import SendIcon from '@mui/icons-material/Send';
+import LockIcon from '@mui/icons-material/Lock';
+
+const darkTheme = createTheme({
+  palette: {
+    mode: 'dark',
+    background: {
+      default: '#000000',
+      paper: '#111216',
+    },
+    primary: {
+      main: '#10b981', // Emerald 500
+    },
+  },
+  typography: {
+    fontFamily: 'inherit',
+  },
+});
 
 interface ChatRoomProps {
   room: RoomWithDistance;
@@ -120,168 +143,149 @@ export function ChatRoom({ room }: ChatRoomProps) {
     setIsShareOpen(true);
   };
 
+
   return (
-    <div className="flex flex-col h-[calc(100vh-5rem)] max-w-5xl mx-auto rounded-3xl bg-black/40 border border-white/10 shadow-2xl backdrop-blur-2xl overflow-hidden my-4">
-      {/* Top Header Bar */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.08] bg-[#111216]">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-emerald-400">
-            <Radio className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-base font-semibold text-white tracking-tight">{room.name}</h1>
-              <span className="px-2 py-0.5 rounded-md bg-white/[0.06] text-[11px] font-medium text-zinc-300">
-                {room.category}
-              </span>
-            </div>
-            <div className="flex items-center gap-2.5 text-xs text-zinc-400 mt-0.5">
-              <span className="flex items-center gap-1 text-emerald-400 font-medium">
-                <Users className="w-3.5 h-3.5" />
-                {room.userCount || 1} online
-              </span>
-              <span>•</span>
-              <span className="text-zinc-400">
-                {room.formattedDistance}
-              </span>
-            </div>
-          </div>
-        </div>
+    <ThemeProvider theme={darkTheme}>
+      <Paper 
+        elevation={3} 
+        sx={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          height: '100%', 
+          borderRadius: 0, 
+          overflow: 'hidden',
+          bgcolor: 'background.default'
+        }}
+      >
+        <AppBar position="static" color="transparent" elevation={1} sx={{ bgcolor: 'background.paper', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+          <Toolbar>
+            <IconButton edge="start" color="inherit" onClick={() => router.push('/')} sx={{ mr: 2 }}>
+              <ArrowBackIcon />
+            </IconButton>
+            <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="h6" component="div" sx={{ fontWeight: 600 }}>
+                {room.name}
+              </Typography>
+              <Chip label={room.category} size="small" variant="outlined" sx={{ borderRadius: 1 }} />
+            </Box>
+            
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Typography variant="caption" color="text.secondary">
+                {room.userCount || 1} online • {room.formattedDistance}
+              </Typography>
+              
+              <IdentityBadge />
 
-        <div className="flex items-center gap-3">
-          <IdentityBadge />
-          
-          {user?.isAdmin && (
-            <button
-              onClick={async () => {
-                if (!confirm("Are you sure you want to delete this room? This action cannot be undone.")) return;
-                setIsDeleting(true);
-                const res = await deleteRoomAction(room.id);
-                if (res.success) {
-                  router.push("/");
-                } else {
-                  setIsDeleting(false);
-                  alert(res.error || "Failed to delete room");
-                }
-              }}
-              disabled={isDeleting}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-xs font-medium text-red-400 hover:text-red-300 transition-colors cursor-pointer disabled:opacity-50"
-              title="Delete Room"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>{isDeleting ? "Deleting..." : "Delete"}</span>
-            </button>
-          )}
+              {user?.isAdmin && (
+                <IconButton 
+                  color="error" 
+                  onClick={async () => {
+                    if (!confirm("Are you sure you want to delete this room?")) return;
+                    setIsDeleting(true);
+                    const res = await deleteRoomAction(room.id);
+                    if (res.success) router.push("/");
+                    else { setIsDeleting(false); alert(res.error); }
+                  }}
+                  disabled={isDeleting}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              )}
 
-          <button
-            onClick={handleShare}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-medium text-zinc-300 hover:text-white transition-colors cursor-pointer"
-            title="Share room"
-          >
-            <Share2 className="w-3.5 h-3.5" />
-            <span>Share</span>
-          </button>
-        </div>
-      </div>
+              <IconButton color="inherit" onClick={handleShare}>
+                <ShareIcon />
+              </IconButton>
+            </Box>
+          </Toolbar>
+        </AppBar>
 
-      {/* Messages Feed Area */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent relative">
-        {isUnauthorized ? (
-          <div className="flex flex-col items-center justify-center h-full max-w-sm mx-auto">
-            <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 mb-6">
-              <Lock className="w-8 h-8" />
-            </div>
-            <h2 className="text-xl font-semibold text-white tracking-tight mb-2">Private Room</h2>
-            <p className="text-sm text-zinc-400 text-center mb-8 leading-relaxed">
-              This room is password protected. Please enter the password to join the conversation.
-            </p>
-            <form onSubmit={handleJoinPrivate} className="w-full space-y-4">
-              <div className="space-y-1">
-                <input
+        <Box sx={{ flex: 1, overflowY: 'auto', p: 3, position: 'relative' }}>
+          {isUnauthorized ? (
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', maxWidth: 400, mx: 'auto', textAlign: 'center' }}>
+              <Avatar sx={{ bgcolor: 'warning.light', width: 64, height: 64, mb: 3 }}>
+                <LockIcon fontSize="large" sx={{ color: 'warning.dark' }} />
+              </Avatar>
+              <Typography variant="h5" gutterBottom>Private Room</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+                This room is password protected. Please enter the password to join.
+              </Typography>
+              <form onSubmit={handleJoinPrivate} style={{ width: '100%' }}>
+                <TextField
+                  fullWidth
                   type="password"
                   value={passwordInput}
                   onChange={(e) => setPasswordInput(e.target.value)}
                   placeholder="Enter password..."
-                  className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/[0.08] text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500/50 transition-colors"
+                  variant="outlined"
                   disabled={isJoining}
+                  error={!!joinError}
+                  helperText={joinError}
+                  sx={{ mb: 2 }}
                 />
-                {joinError && <p className="text-xs text-red-400 mt-1">{joinError}</p>}
-              </div>
-              <button
-                type="submit"
-                disabled={isJoining || !passwordInput}
-                className="w-full py-3 rounded-xl bg-white hover:bg-zinc-200 text-black font-semibold text-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              >
-                <span>{isJoining ? "Joining..." : "Join Room"}</span>
-                {!isJoining && <ArrowRight className="w-4 h-4" />}
-              </button>
-            </form>
-          </div>
-        ) : isLoading ? (
-          <div className="flex flex-col items-center justify-center h-full gap-3 text-zinc-500 text-xs">
-            <div className="w-6 h-6 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
-            <span>Loading messages...</span>
-          </div>
-        ) : messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full gap-1.5 text-center my-12 p-8 rounded-2xl bg-[#111216] border border-white/[0.08] max-w-md mx-auto">
-            <h3 className="text-sm font-semibold text-white">No messages yet</h3>
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              You are the first person in <span className="text-zinc-200 font-medium">{room.name}</span>. Say hello to start the conversation!
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {hasMore && (
-              <div className="flex justify-center py-4">
-                <button
-                  onClick={loadOlderMessages}
-                  disabled={isLoadingMore}
-                  className="px-4 py-1.5 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-medium text-zinc-300 transition-colors"
+                <Button 
+                  fullWidth 
+                  variant="contained" 
+                  type="submit" 
+                  disabled={isJoining || !passwordInput}
+                  size="large"
                 >
-                  {isLoadingMore ? "Loading..." : "Load older messages"}
-                </button>
-              </div>
-            )}
-            <AnimatePresence>
-              {messages.map((msg) => (
-                <MessageBubble
-                  key={msg.id}
-                  message={msg}
-                  onReactionUpdate={loadMessages}
-                  onDeleteUpdate={loadMessages}
-                />
-              ))}
-            </AnimatePresence>
-          </div>
+                  {isJoining ? 'Joining...' : 'Join Room'}
+                </Button>
+              </form>
+            </Box>
+          ) : isLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+              <CircularProgress size={30} />
+            </Box>
+          ) : messages.length === 0 ? (
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+              <Paper sx={{ p: 4, textAlign: 'center', borderRadius: 3, bgcolor: 'background.paper', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>No messages yet</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  You are the first person in {room.name}. Say hello!
+                </Typography>
+              </Paper>
+            </Box>
+          ) : (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {hasMore && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                  <Button size="small" variant="outlined" onClick={loadOlderMessages} disabled={isLoadingMore}>
+                    {isLoadingMore ? "Loading..." : "Load older messages"}
+                  </Button>
+                </Box>
+              )}
+              <AnimatePresence>
+                {messages.map((msg) => (
+                  <MessageBubble key={msg.id} message={msg} onReactionUpdate={loadMessages} onDeleteUpdate={loadMessages} />
+                ))}
+              </AnimatePresence>
+            </Box>
+          )}
+          <div ref={messagesEndRef} />
+        </Box>
+
+        {!isUnauthorized && (
+          <Paper elevation={4} sx={{ p: 2, bgcolor: 'background.paper', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+            <TypingIndicator typingUsers={typingUsers} />
+            <ChatInput roomId={room.id} onMessageSent={(newMsg) => {
+              setMessages((prev) => {
+                if (prev.some((m) => m.id === newMsg.id)) return prev;
+                return [...prev, newMsg];
+              });
+              setTimeout(() => scrollToBottom(true), 50);
+            }} />
+          </Paper>
         )}
 
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Bottom Input Section */}
-      {!isUnauthorized && (
-        <div className="p-4 border-t border-white/[0.08] bg-[#111216]">
-          <TypingIndicator typingUsers={typingUsers} />
-          <ChatInput roomId={room.id} onMessageSent={(newMsg) => {
-            setMessages((prev) => {
-              if (prev.some((m) => m.id === newMsg.id)) return prev;
-              return [...prev, newMsg];
-            });
-            setTimeout(() => scrollToBottom(true), 50);
-          }} />
-          <div className="flex items-center justify-center gap-1 mt-2 text-[11px] text-zinc-500">
-            <span>Messages disappear when timers expire or when rooms empty.</span>
-          </div>
-        </div>
-      )}
-
-      <ShareModal
-        isOpen={isShareOpen}
-        onClose={() => setIsShareOpen(false)}
-        roomName={room.name}
-        roomId={room.id}
-        geohash={room.geohash}
-      />
-    </div>
+        <ShareModal
+          isOpen={isShareOpen}
+          onClose={() => setIsShareOpen(false)}
+          roomName={room.name}
+          roomId={room.id}
+          geohash={room.geohash}
+        />
+      </Paper>
+    </ThemeProvider>
   );
 }
