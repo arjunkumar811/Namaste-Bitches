@@ -14,6 +14,15 @@ const jetbrainsMono = JetBrains_Mono({
   variable: "--font-mono",
 });
 
+import type { Viewport } from "next";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
 export const metadata: Metadata = {
   title: "NamasteBitches — Anonymous Location-Based Chat",
   description: "Chat with people around you. Stay completely anonymous. Real-time proximity radar frequencies.",

@@ -44,14 +44,14 @@ export function Navbar({ onOpenCreateModal }: NavbarProps) {
           <div className="relative w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400/20 to-emerald-600/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-105 group-hover:border-emerald-400/50 transition-all duration-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
             <Radio className="w-4 h-4" />
           </div>
-          <span className="text-sm sm:text-base font-bold tracking-tight text-white/90 group-hover:text-white transition-colors drop-shadow-sm">
+          <span className="text-sm sm:text-base font-bold tracking-tight text-white/90 group-hover:text-white transition-colors drop-shadow-sm hidden sm:inline-block">
             NamasteBitches
           </span>
         </Link>
 
         {/* Right Actions */}
-        <div className="flex items-center gap-3">
-          <div className="hidden sm:block">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div>
             <IdentityBadge />
           </div>
 

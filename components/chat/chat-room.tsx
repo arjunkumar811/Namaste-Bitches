@@ -169,8 +169,8 @@ export function ChatRoom({ room }: ChatRoomProps) {
               <Chip label={room.category} size="small" variant="outlined" sx={{ borderRadius: 1 }} />
             </Box>
             
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Typography variant="caption" color="text.secondary">
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 2 } }}>
+              <Typography variant="caption" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
                 {room.userCount || 1} online • {room.formattedDistance}
               </Typography>
               
@@ -199,7 +199,7 @@ export function ChatRoom({ room }: ChatRoomProps) {
           </Toolbar>
         </AppBar>
 
-        <Box sx={{ flex: 1, overflowY: 'auto', p: 3, position: 'relative' }}>
+        <Box sx={{ flex: 1, overflowY: 'auto', p: { xs: 1.5, sm: 3 }, position: 'relative' }}>
           {isUnauthorized ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', maxWidth: 400, mx: 'auto', textAlign: 'center' }}>
               <Avatar sx={{ bgcolor: 'warning.light', width: 64, height: 64, mb: 3 }}>
