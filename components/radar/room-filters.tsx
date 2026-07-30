@@ -47,6 +47,7 @@ export function RoomFilters({ filters, onFilterChange }: RoomFiltersProps) {
             <button
               onClick={() => onFilterChange({ search: "" })}
               className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-zinc-400 hover:text-white cursor-pointer"
+              suppressHydrationWarning
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -104,6 +105,7 @@ export function RoomFilters({ filters, onFilterChange }: RoomFiltersProps) {
                   ? "bg-white/[0.1] border-white/[0.2] text-white font-medium"
                   : "bg-white/[0.03] border-white/[0.06] text-zinc-400 hover:bg-white/[0.06] hover:text-white"
               }`}
+              suppressHydrationWarning
             >
               <span>{cat.icon}</span>
               <span>{cat.label}</span>

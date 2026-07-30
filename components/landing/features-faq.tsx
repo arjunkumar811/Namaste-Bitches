@@ -100,6 +100,7 @@ export function FeaturesAndFaq() {
                 <button
                   onClick={() => setOpenFaq(isOpen ? null : idx)}
                   className="w-full p-4 text-left font-medium text-zinc-200 hover:text-white flex items-center justify-between gap-4 text-xs sm:text-sm cursor-pointer"
+                  suppressHydrationWarning
                 >
                   <span>{faq.q}</span>
                   <ChevronDown
