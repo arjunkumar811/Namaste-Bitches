@@ -185,7 +185,7 @@ export function ChatInput({ roomId, onMessageSent }: ChatInputProps) {
           type="text"
           value={content}
           onChange={handleContentChange}
-          placeholder="Namaste Bitches anonymously to nearby people..."
+          placeholder="namaste-chat anonymously to nearby people..."
           disabled={isSubmitting}
           className="flex-1 bg-transparent px-2 py-1.5 text-sm text-white placeholder-zinc-500 focus:outline-none font-sans"
         />

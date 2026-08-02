@@ -45,7 +45,7 @@ export function Navbar({ onOpenCreateModal }: NavbarProps) {
             <Radio className="w-4 h-4" />
           </div>
           <span className="text-sm sm:text-base font-bold tracking-tight text-white/90 group-hover:text-white transition-colors drop-shadow-sm hidden sm:inline-block">
-            NamasteBitches
+            namaste-chat
           </span>
         </Link>
 

@@ -24,7 +24,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "NamasteBitches — Anonymous Location-Based Chat",
+  title: "Namaste🙏Chat",
   description: "Chat with people around you. Stay completely anonymous. Real-time proximity radar frequencies.",
 };
 

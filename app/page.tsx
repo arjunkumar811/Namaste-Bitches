@@ -65,7 +65,7 @@ export default function Home() {
           
           <div className="relative z-10 flex flex-col items-center">
             <ShinyBadge icon={<Sparkles className="w-3.5 h-3.5 text-emerald-400" />} className="mb-8">
-              Introducing NamasteBitches 2.0
+              Introducing namaste-chat 2.0
             </ShinyBadge>
 
             <motion.h1 
@@ -244,7 +244,7 @@ export default function Home() {
       <footer className="w-full border-t border-white/[0.08] py-8 px-4 text-center text-xs text-zinc-500">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-zinc-400">NamasteBitches</span>
+            <span className="font-semibold text-zinc-400">namaste-chat</span>
             <span>— Local anonymous chat</span>
           </div>
           <div className="flex items-center gap-3 text-zinc-500">

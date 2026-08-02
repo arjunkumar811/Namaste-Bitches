@@ -19,7 +19,7 @@ export function Sidebar() {
             <Radio className="w-3.5 h-3.5" />
           </div>
           <span className="text-sm font-bold tracking-tight text-white group-hover:text-emerald-400 transition-colors">
-            NamasteBitches
+            namaste-chat
           </span>
         </Link>
       </div>

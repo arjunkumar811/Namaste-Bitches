@@ -52,7 +52,7 @@ export function WelcomeModal() {
             >
               <div className="flex items-center gap-2 text-zinc-400 text-xs font-medium">
                 <Radio className="w-4 h-4 text-emerald-400" />
-                <span>NamasteBitches</span>
+                <span>namaste-chat</span>
               </div>
 
               <div className="space-y-1.5">
