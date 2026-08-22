@@ -20,10 +20,12 @@ export async function getNearbyRooms(
   lng: number,
   filters?: Partial<RoomFilterState>
 ): Promise<RoomWithDistance[]> {
-  const radius = filters?.radius || 10000; // default 10km
+  const radius = filters?.radius ?? 10000; // 0 means global
   const category = filters?.category || "all";
   const search = (filters?.search || "").toLowerCase().trim();
   const sortBy = filters?.sortBy || "distance";
+  const session = await getSession();
+  const canViewAllRooms = radius === 0 || session?.isAdmin === true;
 
   // Fetch rooms (with message counts and presence)
   const rooms = await prisma.room.findMany({
@@ -59,14 +61,13 @@ export async function getNearbyRooms(
       };
     })
     .filter((room) => {
-      // Allow rooms within radius OR if they are marked pinned/global
       const withinRadius = room.distance <= radius;
       const matchesSearch =
         !search ||
         room.name.toLowerCase().includes(search) ||
         (room.description && room.description.toLowerCase().includes(search));
 
-      return (withinRadius || room.distance <= 50000) && matchesSearch;
+      return (canViewAllRooms || withinRadius) && matchesSearch;
     });
 
   // Sort rooms

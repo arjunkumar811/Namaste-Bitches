@@ -24,6 +24,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   
   const [selectedAvatar, setSelectedAvatar] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -31,13 +32,38 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       setSelectedAvatar(user.avatar);
       setSelectedColor(user.accentColor);
     }
+    const notifs = localStorage.getItem("notificationsEnabled");
+    if (notifs !== null) {
+      setNotificationsEnabled(notifs === "true");
+    }
   }, [user, isOpen]);
+
+  const handleNotificationToggle = async (enabled: boolean) => {
+    if (enabled) {
+      if (!("Notification" in window)) {
+        toast.error("Browser does not support notifications");
+        return;
+      }
+      if (Notification.permission === "default") {
+        const perm = await Notification.requestPermission();
+        if (perm !== "granted") {
+          toast.error("Notification permission denied");
+          return;
+        }
+      } else if (Notification.permission === "denied") {
+        toast.error("Notification permission denied in browser settings");
+        return;
+      }
+    }
+    setNotificationsEnabled(enabled);
+  };
 
   const handleSave = async () => {
     if (!selectedAvatar || !selectedColor) return;
     setIsSaving(true);
     try {
       await updateIdentity(selectedAvatar, selectedColor);
+      localStorage.setItem("notificationsEnabled", notificationsEnabled.toString());
       toast.success("Settings updated successfully!");
       onClose();
     } catch (error) {
@@ -107,13 +133,36 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             </div>
           </div>
 
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-sm font-medium text-zinc-300">Notifications</h4>
+                <p className="text-xs text-zinc-500">Get notified when new messages arrive</p>
+              </div>
+              <button
+                onClick={() => handleNotificationToggle(!notificationsEnabled)}
+                className={cn(
+                  "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
+                  notificationsEnabled ? "bg-emerald-500" : "bg-zinc-700"
+                )}
+              >
+                <span
+                  className={cn(
+                    "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
+                    notificationsEnabled ? "translate-x-6" : "translate-x-1"
+                  )}
+                />
+              </button>
+            </div>
+          </div>
+
           <div className="pt-4 flex justify-end gap-3">
             <Button variant="ghost" onClick={onClose} className="hover:bg-white/5 text-zinc-300">
               Cancel
             </Button>
             <Button 
               onClick={handleSave} 
-              disabled={isSaving || (selectedAvatar === user.avatar && selectedColor === user.accentColor)}
+              disabled={isSaving}
               className="bg-white text-black hover:bg-zinc-200"
             >
               {isSaving ? "Saving..." : "Save Changes"}

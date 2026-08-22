@@ -122,6 +122,18 @@ export function ChatRoom({ room }: ChatRoomProps) {
         return [...prev, newMsg];
       });
       setTimeout(() => scrollToBottom(true), 50);
+
+      if (
+        document.visibilityState !== "visible" &&
+        newMsg.userId !== user?.userId &&
+        localStorage.getItem("notificationsEnabled") !== "false" &&
+        "Notification" in window &&
+        Notification.permission === "granted"
+      ) {
+        new Notification(`New message in ${room.name}`, {
+          body: `${newMsg.user.username}: ${newMsg.content}`
+        });
+      }
     } else if (ev.event === "message:reaction") {
       const updatedMsg = data as ChatMessage;
       setMessages((prev) => prev.map((m) => (m.id === updatedMsg.id ? updatedMsg : m)));

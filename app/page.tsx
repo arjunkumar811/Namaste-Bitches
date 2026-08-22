@@ -217,7 +217,9 @@ export default function Home() {
             </div>
             <h3 className="text-base font-semibold text-white mb-1">No rooms found nearby</h3>
             <p className="text-xs text-zinc-400 max-w-sm mb-5 leading-relaxed">
-              There are no active chat rooms within {filters.radius / 1000}km. Be the first to start a room in your area!
+              {filters.radius === 0
+                ? "There are no active chat rooms yet. Be the first to start one!"
+                : `There are no active chat rooms within ${filters.radius / 1000}km. Be the first to start a room in your area!`}
             </p>
             <button
               onClick={() => setIsCreateOpen(true)}

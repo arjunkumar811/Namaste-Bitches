@@ -24,7 +24,7 @@ const RADIUS_OPTIONS = [
   { label: "1km", value: 1000 },
   { label: "5km", value: 5000 },
   { label: "10km", value: 10000 },
-  { label: "Global (50km+)", value: 50000 },
+  { label: "Global", value: 0 },
 ];
 
 export function RoomFilters({ filters, onFilterChange }: RoomFiltersProps) {

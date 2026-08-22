@@ -26,7 +26,7 @@ export interface SectorData {
 }
 
 export interface RoomFilterState {
-  radius: number; // in meters (500, 1000, 5000, 10000, 50000)
+  radius: number; // in meters; 0 means global
   category: string; // "all", "general", "campus", "nightlife", "tech", "gaming", "chill"
   search: string;
   sortBy: "distance" | "active" | "newest";
