@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Shield, EyeOff, Radio, MapPin, ArrowRight } from "lucide-react";
 import { useLocation } from "@/hooks/use-location";
 import { useAuth } from "@/components/providers/auth-provider";
+import { safeStorage } from "@/lib/utils";
 
 export function WelcomeModal() {
   const [isOpen, setIsOpen] = useState(false);
@@ -13,7 +14,7 @@ export function WelcomeModal() {
   const { user } = useAuth();
 
   useEffect(() => {
-    const seen = localStorage.getItem("nb_onboarding_seen_v2");
+    const seen = safeStorage.getItem("nb_onboarding_seen_v2");
     if (!seen && user) {
       setIsOpen(true);
     }
@@ -21,12 +22,12 @@ export function WelcomeModal() {
 
   const handleGrantGps = () => {
     requestLocation();
-    localStorage.setItem("nb_onboarding_seen_v2", "true");
+    safeStorage.setItem("nb_onboarding_seen_v2", "true");
     setIsOpen(false);
   };
 
   const handleSkipGps = () => {
-    localStorage.setItem("nb_onboarding_seen_v2", "true");
+    safeStorage.setItem("nb_onboarding_seen_v2", "true");
     setIsOpen(false);
   };
 

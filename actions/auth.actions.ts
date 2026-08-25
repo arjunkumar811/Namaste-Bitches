@@ -12,38 +12,48 @@ const adminRateLimiter = new RateLimiter(5, 15 * 60 * 1000);
  * Gets the current active session or returns null
  */
 export async function getSession(): Promise<SessionPayload | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
-  if (!token) return null;
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+    if (!token) return null;
 
-  return AuthService.validateSession(token);
+    return await AuthService.validateSession(token);
+  } catch (error) {
+    console.error("Database error in getSession:", error);
+    return null;
+  }
 }
 
 /**
  * Automatically logins as an anonymous guest, creating session cookie if not present
  */
 export async function loginAnonymously(): Promise<SessionPayload> {
-  const cookieStore = await cookies();
-  const existingToken = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+  try {
+    const cookieStore = await cookies();
+    const existingToken = cookieStore.get(SESSION_COOKIE_NAME)?.value;
 
-  if (existingToken) {
-    const validSession = await AuthService.validateSession(existingToken);
-    if (validSession) return validSession;
+    if (existingToken) {
+      const validSession = await AuthService.validateSession(existingToken);
+      if (validSession) return validSession;
+    }
+
+    // Create new session
+    const newSession = await AuthService.createAnonymousSession();
+
+    // Set secure HTTP-only cookie
+    cookieStore.set(SESSION_COOKIE_NAME, newSession.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 30 * 24 * 60 * 60, // 30 days
+      path: "/",
+    });
+
+    return newSession;
+  } catch (error) {
+    console.error("Database error in loginAnonymously:", error);
+    throw new Error("Authentication failed");
   }
-
-  // Create new session
-  const newSession = await AuthService.createAnonymousSession();
-
-  // Set secure HTTP-only cookie
-  cookieStore.set(SESSION_COOKIE_NAME, newSession.token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-    path: "/",
-  });
-
-  return newSession;
 }
 
 /**

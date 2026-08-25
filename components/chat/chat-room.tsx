@@ -13,7 +13,7 @@ import { IdentityBadge } from "@/components/auth/identity-badge";
 import { ShareModal } from "@/components/chat/share-modal";
 import { useRealtime } from "@/hooks/use-realtime";
 import { useAuth } from "@/components/providers/auth-provider";
-import { urlBase64ToUint8Array } from "@/lib/utils";
+import { urlBase64ToUint8Array, safeStorage } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { Users, Radio, Share2, Shield, Sparkles, MapPin, Lock, ArrowRight, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -133,7 +133,7 @@ export function ChatRoom({ room }: ChatRoomProps) {
       try {
         const reg = await navigator.serviceWorker.register('/sw.js');
         const sub = await reg.pushManager.getSubscription();
-        const roomPref = localStorage.getItem(`room_push_${room.id}`);
+        const roomPref = safeStorage.getItem(`room_push_${room.id}`);
         
         if (sub && roomPref === "true") {
           setPushState("enabled");
@@ -149,7 +149,7 @@ export function ChatRoom({ room }: ChatRoomProps) {
     checkPush();
     
     // Also trigger prompt if they haven't explicitly chosen before and not denied
-    const pref = localStorage.getItem(`room_push_${room.id}`);
+    const pref = safeStorage.getItem(`room_push_${room.id}`);
     if (!pref && Notification.permission !== "denied" && "serviceWorker" in navigator) {
       setShowNotificationPrompt(true);
     }
@@ -195,7 +195,7 @@ export function ChatRoom({ room }: ChatRoomProps) {
         if (!res.success) throw new Error(res.error || "Failed to save subscription on server");
       }
       
-      localStorage.setItem(`room_push_${room.id}`, "true");
+      safeStorage.setItem(`room_push_${room.id}`, "true");
       setPushState("enabled");
       setShowNotificationPrompt(false);
     } catch (e: any) {
@@ -214,7 +214,7 @@ export function ChatRoom({ room }: ChatRoomProps) {
           await unsubscribeFromRoomAction(room.id, subJSON.endpoint);
         }
       }
-      localStorage.setItem(`room_push_${room.id}`, "false");
+      safeStorage.setItem(`room_push_${room.id}`, "false");
       setPushState("disabled");
       setShowDisablePrompt(false);
     } catch (e) {
@@ -394,7 +394,7 @@ export function ChatRoom({ room }: ChatRoomProps) {
         </Box>
 
         {!isUnauthorized && (
-          <Paper elevation={4} sx={{ p: 2, bgcolor: 'background.paper', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+          <Paper elevation={4} sx={{ p: 2, pb: 'calc(16px + env(safe-area-inset-bottom))', bgcolor: 'background.paper', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
             <TypingIndicator typingUsers={typingUsers} />
             <ChatInput roomId={room.id} onMessageSent={(newMsg) => {
               setMessages((prev) => {
@@ -417,7 +417,7 @@ export function ChatRoom({ room }: ChatRoomProps) {
         <Dialog
           open={showNotificationPrompt}
           onClose={() => {
-            localStorage.setItem(`room_push_${room.id}`, "false");
+            safeStorage.setItem(`room_push_${room.id}`, "false");
             setShowNotificationPrompt(false);
           }}
           sx={{
@@ -441,7 +441,7 @@ export function ChatRoom({ room }: ChatRoomProps) {
             <Button 
               color="inherit"
               onClick={() => {
-                localStorage.setItem(`room_push_${room.id}`, "false");
+                safeStorage.setItem(`room_push_${room.id}`, "false");
                 setShowNotificationPrompt(false);
               }}
             >

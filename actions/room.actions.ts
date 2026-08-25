@@ -20,121 +20,131 @@ export async function getNearbyRooms(
   lng: number,
   filters?: Partial<RoomFilterState>
 ): Promise<RoomWithDistance[]> {
-  const radius = filters?.radius ?? 10000; // 0 means global
-  const category = filters?.category || "all";
-  const search = (filters?.search || "").toLowerCase().trim();
-  const sortBy = filters?.sortBy || "distance";
-  const session = await getSession();
-  const canViewAllRooms = radius === 0 || session?.isAdmin === true;
+  try {
+    const radius = filters?.radius ?? 10000; // 0 means global
+    const category = filters?.category || "all";
+    const search = (filters?.search || "").toLowerCase().trim();
+    const sortBy = filters?.sortBy || "distance";
+    const session = await getSession();
+    const canViewAllRooms = radius === 0 || session?.isAdmin === true;
 
-  const latDelta = radius / 111320;
-  // Convert lat to radians for longitude distance approximation
-  const lngDelta = radius / (111320 * Math.cos(lat * (Math.PI / 180)));
+    const latDelta = radius / 111320;
+    // Convert lat to radians for longitude distance approximation
+    const lngDelta = radius / (111320 * Math.cos(lat * (Math.PI / 180)));
 
-  // Prisma search filter (push down to DB)
-  const searchFilter = search ? {
-    OR: [
-      { name: { contains: search, mode: 'insensitive' as const } },
-      { description: { contains: search, mode: 'insensitive' as const } }
-    ]
-  } : {};
+    // Prisma search filter (push down to DB)
+    const searchFilter = search ? {
+      OR: [
+        { name: { contains: search, mode: 'insensitive' as const } },
+        { description: { contains: search, mode: 'insensitive' as const } }
+      ]
+    } : {};
 
-  // Bounding box filter (reduce DB rows returned before exact haversine in JS)
-  const distanceFilter = canViewAllRooms ? {} : {
-    OR: [
-      { radiusMeters: 0 },
-      {
-        AND: [
-          { latitude: { gte: lat - latDelta, lte: lat + latDelta } },
-          { longitude: { gte: lng - lngDelta, lte: lng + lngDelta } }
-        ]
-      }
-    ]
-  };
+    // Bounding box filter (reduce DB rows returned before exact haversine in JS)
+    const distanceFilter = canViewAllRooms ? {} : {
+      OR: [
+        { radiusMeters: 0 },
+        {
+          AND: [
+            { latitude: { gte: lat - latDelta, lte: lat + latDelta } },
+            { longitude: { gte: lng - lngDelta, lte: lng + lngDelta } }
+          ]
+        }
+      ]
+    };
 
-  // Fetch rooms (with message counts and presence)
-  const rooms = await prisma.room.findMany({
-    where: {
-      isActive: true,
-      ...(category !== "all" ? { category } : {}),
-      ...searchFilter,
-      ...distanceFilter,
-    },
-    include: {
-      _count: {
-        select: { messages: true, presences: true },
+    // Fetch rooms (with message counts and presence)
+    const rooms = await prisma.room.findMany({
+      where: {
+        isActive: true,
+        ...(category !== "all" ? { category } : {}),
+        ...searchFilter,
+        ...distanceFilter,
       },
-    },
-  });
-
-  const userCoord = { latitude: lat, longitude: lng };
-
-  // Compute distances and filter by radius
-  const roomsWithDistance: RoomWithDistance[] = rooms
-    .map((room) => {
-      const distance = LocationService.getDistanceInMeters(userCoord, {
-        latitude: room.latitude,
-        longitude: room.longitude,
-      });
-
-      // Strip sensitive fields
-      const { latitude, longitude, password, ...safeRoom } = room;
-
-      const isGlobal = safeRoom.radiusMeters === 0;
-
-      return {
-        ...safeRoom,
-        distance: isGlobal ? 0 : distance,
-        formattedDistance: isGlobal ? "Global" : LocationService.formatDistance(distance),
-        userCount: safeRoom._count.presences + Math.floor(safeRoom._count.messages / 3) + 1, // Simulated active feel
-      };
-    })
-    .filter((room) => {
-      const isGlobalRoom = room.radiusMeters === 0;
-      const withinRadius = isGlobalRoom || room.distance <= radius;
-      const matchesSearch =
-        !search ||
-        room.name.toLowerCase().includes(search) ||
-        (room.description && room.description.toLowerCase().includes(search));
-
-      return (canViewAllRooms || withinRadius) && matchesSearch;
+      include: {
+        _count: {
+          select: { messages: true, presences: true },
+        },
+      },
     });
 
-  // Sort rooms
-  roomsWithDistance.sort((a, b) => {
-    if (sortBy === "distance") return a.distance - b.distance;
-    if (sortBy === "active") return (b.userCount || 0) - (a.userCount || 0);
-    if (sortBy === "newest") return b.createdAt.getTime() - a.createdAt.getTime();
-    return a.distance - b.distance;
-  });
+    const userCoord = { latitude: lat, longitude: lng };
 
-  return roomsWithDistance;
+    // Compute distances and filter by radius
+    const roomsWithDistance: RoomWithDistance[] = rooms
+      .map((room) => {
+        const distance = LocationService.getDistanceInMeters(userCoord, {
+          latitude: room.latitude,
+          longitude: room.longitude,
+        });
+
+        // Strip sensitive fields
+        const { latitude, longitude, password, ...safeRoom } = room;
+
+        const isGlobal = safeRoom.radiusMeters === 0;
+
+        return {
+          ...safeRoom,
+          distance: isGlobal ? 0 : distance,
+          formattedDistance: isGlobal ? "Global" : LocationService.formatDistance(distance),
+          userCount: safeRoom._count.presences + Math.floor(safeRoom._count.messages / 3) + 1, // Simulated active feel
+        };
+      })
+      .filter((room) => {
+        const isGlobalRoom = room.radiusMeters === 0;
+        const withinRadius = isGlobalRoom || room.distance <= radius;
+        const matchesSearch =
+          !search ||
+          room.name.toLowerCase().includes(search) ||
+          (room.description && room.description.toLowerCase().includes(search));
+
+        return (canViewAllRooms || withinRadius) && matchesSearch;
+      });
+
+    // Sort rooms
+    roomsWithDistance.sort((a, b) => {
+      if (sortBy === "distance") return a.distance - b.distance;
+      if (sortBy === "active") return (b.userCount || 0) - (a.userCount || 0);
+      if (sortBy === "newest") return b.createdAt.getTime() - a.createdAt.getTime();
+      return a.distance - b.distance;
+    });
+
+    return roomsWithDistance;
+  } catch (error) {
+    console.error("Database error in getNearbyRooms:", error);
+    return [];
+  }
 }
 
 /**
  * Get a specific room by id or slug
  */
 export async function getRoomById(roomId: string): Promise<RoomWithDistance | null> {
-  const room = await prisma.room.findFirst({
-    where: {
-      OR: [{ id: roomId }, { slug: roomId }],
-    },
-    include: {
-      _count: { select: { messages: true, presences: true } },
-    },
-  });
+  try {
+    const room = await prisma.room.findFirst({
+      where: {
+        OR: [{ id: roomId }, { slug: roomId }],
+      },
+      include: {
+        _count: { select: { messages: true, presences: true } },
+      },
+    });
 
-  if (!room) return null;
+    if (!room) return null;
 
-  // Strip sensitive fields
-  const { latitude, longitude, password, ...safeRoom } = room;
+    // Strip sensitive fields
+    const { latitude, longitude, password, ...safeRoom } = room;
 
-  return {
-    ...safeRoom,
-    distance: 0,
-    formattedDistance: "Nearby",
-    userCount: safeRoom._count.presences + Math.floor(safeRoom._count.messages / 3) + 1,
-  };
+    return {
+      ...safeRoom,
+      distance: 0,
+      formattedDistance: "Nearby",
+      userCount: safeRoom._count.presences + Math.floor(safeRoom._count.messages / 3) + 1,
+    };
+  } catch (error) {
+    console.error("Database error in getRoomById:", error);
+    return null;
+  }
 }
 
 /**

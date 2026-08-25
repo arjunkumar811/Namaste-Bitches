@@ -243,7 +243,7 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="w-full border-t border-white/[0.08] py-8 px-4 text-center text-xs text-zinc-500">
+      <footer className="w-full border-t border-white/[0.08] pt-8 pb-[calc(2rem+env(safe-area-inset-bottom))] px-4 text-center text-xs text-zinc-500">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <span className="font-semibold text-zinc-400">namaste-chat</span>

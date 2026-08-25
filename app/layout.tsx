@@ -16,16 +16,26 @@ const jetbrainsMono = JetBrains_Mono({
 
 import type { Viewport } from "next";
 
+export const metadata: Metadata = {
+  title: "Namaste🙏Chat",
+  description: "Chat with people around you. Stay completely anonymous. Real-time proximity radar frequencies.",
+  appleWebApp: {
+    capable: true,
+    title: "Namaste Chat",
+    statusBarStyle: "black-translucent",
+  },
+  formatDetection: {
+    telephone: false, // Prevents iOS Safari from styling numbers as links
+  },
+};
+
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-};
-
-export const metadata: Metadata = {
-  title: "Namaste🙏Chat",
-  description: "Chat with people around you. Stay completely anonymous. Real-time proximity radar frequencies.",
+  viewportFit: "cover", // Essential for iPhone safe areas
+  themeColor: "#000000",
 };
 
 export default function RootLayout({
