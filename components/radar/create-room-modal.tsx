@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Radio, Lock, AlertCircle, X } from "lucide-react";
+import { Radio, Lock, AlertCircle, X, Globe } from "lucide-react";
 import { createRoomAction } from "@/actions/room.actions";
 import { RoomWithDistance } from "@/types/location";
 import { useRouter } from "next/navigation";
@@ -29,6 +29,7 @@ export function CreateRoomModal({ isOpen, onClose, userLat, userLng, onRoomCreat
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("general");
   const [radiusMeters, setRadiusMeters] = useState(1000);
+  const [isGlobal, setIsGlobal] = useState(false);
   const [isPrivate, setIsPrivate] = useState(false);
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -54,7 +55,7 @@ export function CreateRoomModal({ isOpen, onClose, userLat, userLng, onRoomCreat
       category,
       latitude: userLat,
       longitude: userLng,
-      radiusMeters,
+      radiusMeters: isGlobal ? 0 : radiusMeters,
       isPrivate,
       password: isPrivate ? password : undefined,
     });
@@ -159,24 +160,48 @@ export function CreateRoomModal({ isOpen, onClose, userLat, userLng, onRoomCreat
             </div>
 
             <div>
-              <div className="flex items-center justify-between text-xs mb-1.5">
-                <span className="text-zinc-300 font-medium">Radius</span>
-                <span className="text-zinc-400 font-mono">{radiusMeters}m</span>
-              </div>
-              <input
-                type="range"
-                min="200"
-                max="10000"
-                step="200"
-                value={radiusMeters}
-                onChange={(e) => setRadiusMeters(Number(e.target.value))}
-                className="w-full accent-emerald-500 bg-white/[0.08] rounded-lg h-1.5 cursor-pointer"
-              />
-              <div className="flex justify-between text-[10px] text-zinc-500 mt-1">
-                <span>200m</span>
-                <span>5km</span>
-                <span>10km</span>
-              </div>
+              <label className="flex items-center justify-between cursor-pointer p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] mb-3">
+                <span className="flex items-center gap-1.5 text-xs text-zinc-300 font-medium">
+                  <Globe className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Global Room (Accessible anywhere)</span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={isGlobal}
+                  onChange={(e) => setIsGlobal(e.target.checked)}
+                  className="w-4 h-4 accent-emerald-500 rounded"
+                />
+              </label>
+
+              <AnimatePresence>
+                {!isGlobal && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="flex items-center justify-between text-xs mb-1.5 pt-1">
+                      <span className="text-zinc-300 font-medium">Radius</span>
+                      <span className="text-zinc-400 font-mono">{radiusMeters}m</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="200"
+                      max="10000"
+                      step="200"
+                      value={radiusMeters}
+                      onChange={(e) => setRadiusMeters(Number(e.target.value))}
+                      className="w-full accent-emerald-500 bg-white/[0.08] rounded-lg h-1.5 cursor-pointer"
+                    />
+                    <div className="flex justify-between text-[10px] text-zinc-500 mt-1 mb-2">
+                      <span>200m</span>
+                      <span>5km</span>
+                      <span>10km</span>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] space-y-2">

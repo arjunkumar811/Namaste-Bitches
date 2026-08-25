@@ -53,15 +53,18 @@ export async function getNearbyRooms(
       // Strip sensitive fields
       const { latitude, longitude, password, ...safeRoom } = room;
 
+      const isGlobal = safeRoom.radiusMeters === 0;
+
       return {
         ...safeRoom,
-        distance,
-        formattedDistance: LocationService.formatDistance(distance),
+        distance: isGlobal ? 0 : distance,
+        formattedDistance: isGlobal ? "Global" : LocationService.formatDistance(distance),
         userCount: safeRoom._count.presences + Math.floor(safeRoom._count.messages / 3) + 1, // Simulated active feel
       };
     })
     .filter((room) => {
-      const withinRadius = room.distance <= radius;
+      const isGlobalRoom = room.radiusMeters === 0;
+      const withinRadius = isGlobalRoom || room.distance <= radius;
       const matchesSearch =
         !search ||
         room.name.toLowerCase().includes(search) ||
@@ -147,7 +150,7 @@ export async function createRoomAction(data: {
         latitude: data.latitude,
         longitude: data.longitude,
         geohash,
-        radiusMeters: data.radiusMeters || 1000,
+        radiusMeters: data.radiusMeters ?? 1000,
         isPrivate: !!data.isPrivate,
         password: data.password && data.isPrivate ? hashPassword(data.password) : null,
       },

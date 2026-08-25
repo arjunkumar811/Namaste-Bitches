@@ -16,12 +16,13 @@ import { useRouter } from "next/navigation";
 import { Users, Radio, Share2, Shield, Sparkles, MapPin, Lock, ArrowRight, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { Box, AppBar, Toolbar, Typography, IconButton, Paper, Button, TextField, CircularProgress, Chip, Avatar } from '@mui/material';
+import { Box, AppBar, Toolbar, Typography, IconButton, Paper, Button, TextField, CircularProgress, Chip, Avatar, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ShareIcon from '@mui/icons-material/Share';
 import SendIcon from '@mui/icons-material/Send';
 import LockIcon from '@mui/icons-material/Lock';
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 
 const darkTheme = createTheme({
   palette: {
@@ -56,6 +57,7 @@ export function ChatRoom({ room }: ChatRoomProps) {
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
 
   const router = useRouter();
   const { user } = useAuth();
@@ -111,6 +113,13 @@ export function ChatRoom({ room }: ChatRoomProps) {
 
   useEffect(() => {
     loadMessages();
+
+    if (typeof window !== "undefined" && "Notification" in window) {
+      const pref = localStorage.getItem(`room_notifications_${room.id}`);
+      if (!pref && Notification.permission !== "denied") {
+        setShowNotificationPrompt(true);
+      }
+    }
   }, [room.id]);
 
   // Realtime subscription
@@ -123,10 +132,11 @@ export function ChatRoom({ room }: ChatRoomProps) {
       });
       setTimeout(() => scrollToBottom(true), 50);
 
+      const roomNotificationsEnabled = localStorage.getItem(`room_notifications_${room.id}`) === "true";
+
       if (
-        document.visibilityState !== "visible" &&
+        roomNotificationsEnabled &&
         newMsg.userId !== user?.userId &&
-        localStorage.getItem("notificationsEnabled") !== "false" &&
         "Notification" in window &&
         Notification.permission === "granted"
       ) {
@@ -297,6 +307,65 @@ export function ChatRoom({ room }: ChatRoomProps) {
           roomId={room.id}
           geohash={room.geohash}
         />
+
+        <Dialog
+          open={showNotificationPrompt}
+          onClose={() => {
+            localStorage.setItem(`room_notifications_${room.id}`, "false");
+            setShowNotificationPrompt(false);
+          }}
+          sx={{
+            '& .MuiDialog-paper': {
+              bgcolor: 'background.paper',
+              backgroundImage: 'none',
+              border: '1px solid rgba(255,255,255,0.1)'
+            }
+          }}
+        >
+          <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <NotificationsActiveIcon color="primary" />
+            Enable Notifications?
+          </DialogTitle>
+          <DialogContent>
+            <DialogContentText sx={{ color: 'text.secondary' }}>
+              Would you like to be notified when someone sends a new message in <strong>{room.name}</strong>?
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions sx={{ p: 2, pt: 0 }}>
+            <Button 
+              color="inherit"
+              onClick={() => {
+                localStorage.setItem(`room_notifications_${room.id}`, "false");
+                setShowNotificationPrompt(false);
+              }}
+            >
+              No, thanks
+            </Button>
+            <Button 
+              variant="contained"
+              onClick={() => {
+                if (Notification.permission === "default") {
+                  Notification.requestPermission().then((perm) => {
+                    if (perm === "granted") {
+                      localStorage.setItem(`room_notifications_${room.id}`, "true");
+                    } else {
+                      localStorage.setItem(`room_notifications_${room.id}`, "false");
+                    }
+                    setShowNotificationPrompt(false);
+                  });
+                } else if (Notification.permission === "granted") {
+                  localStorage.setItem(`room_notifications_${room.id}`, "true");
+                  setShowNotificationPrompt(false);
+                } else {
+                  localStorage.setItem(`room_notifications_${room.id}`, "false");
+                  setShowNotificationPrompt(false);
+                }
+              }}
+            >
+              Enable
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Paper>
     </ThemeProvider>
   );
