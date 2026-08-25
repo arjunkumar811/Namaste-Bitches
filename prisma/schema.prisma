@@ -63,8 +63,9 @@ model Room {
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
-  messages  Message[]
-  presences Presence[]
+  messages          Message[]
+  presences         Presence[]
+  pushSubscriptions PushSubscription[]
 
   @@index([geohash])
   @@index([activityScore])
@@ -173,3 +174,20 @@ model ActivityLog {
 
   @@index([userId, createdAt])
 }
+
+model PushSubscription {
+  id         String   @id @default(uuid())
+  roomId     String
+  endpoint   String
+  p256dh     String
+  auth       String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  room       Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, endpoint])
+  @@index([roomId])
+  @@index([endpoint])
+}
+

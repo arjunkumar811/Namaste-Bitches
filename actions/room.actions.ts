@@ -27,11 +27,38 @@ export async function getNearbyRooms(
   const session = await getSession();
   const canViewAllRooms = radius === 0 || session?.isAdmin === true;
 
+  const latDelta = radius / 111320;
+  // Convert lat to radians for longitude distance approximation
+  const lngDelta = radius / (111320 * Math.cos(lat * (Math.PI / 180)));
+
+  // Prisma search filter (push down to DB)
+  const searchFilter = search ? {
+    OR: [
+      { name: { contains: search, mode: 'insensitive' as const } },
+      { description: { contains: search, mode: 'insensitive' as const } }
+    ]
+  } : {};
+
+  // Bounding box filter (reduce DB rows returned before exact haversine in JS)
+  const distanceFilter = canViewAllRooms ? {} : {
+    OR: [
+      { radiusMeters: 0 },
+      {
+        AND: [
+          { latitude: { gte: lat - latDelta, lte: lat + latDelta } },
+          { longitude: { gte: lng - lngDelta, lte: lng + lngDelta } }
+        ]
+      }
+    ]
+  };
+
   // Fetch rooms (with message counts and presence)
   const rooms = await prisma.room.findMany({
     where: {
       isActive: true,
       ...(category !== "all" ? { category } : {}),
+      ...searchFilter,
+      ...distanceFilter,
     },
     include: {
       _count: {

@@ -9,13 +9,11 @@ import { useAuth } from "@/components/providers/auth-provider";
 
 interface MessageBubbleProps {
   message: ChatMessage;
-  onReactionUpdate?: () => void;
-  onDeleteUpdate?: () => void;
 }
 
 const QUICK_EMOJIS = ["🔥", "❤️", "🚀", "✨", "👀", "😂"];
 
-export function MessageBubble({ message, onReactionUpdate, onDeleteUpdate }: MessageBubbleProps) {
+export const MessageBubble = React.memo(function MessageBubble({ message }: MessageBubbleProps) {
   const { user: currentAuthUser } = useAuth();
   const [showEmojis, setShowEmojis] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
@@ -31,32 +29,29 @@ export function MessageBubble({ message, onReactionUpdate, onDeleteUpdate }: Mes
       const now = Date.now();
       const diff = Math.max(0, Math.floor((expires - now) / 1000));
       setTimeLeft(diff);
-      if (diff === 0 && onDeleteUpdate) {
-        onDeleteUpdate();
-      }
     };
 
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
-  }, [message.expiresAt, onDeleteUpdate]);
+  }, [message.expiresAt]);
 
   const handleReaction = async (emoji: string) => {
     setShowEmojis(false);
     await toggleReactionAction(message.id, emoji);
-    onReactionUpdate?.();
   };
 
   const handleDelete = async () => {
     if (!confirm("Delete this message?")) return;
     await deleteMessageAction(message.id);
-    onDeleteUpdate?.();
   };
 
   const formattedTime = new Date(message.createdAt).toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
   });
+
+  if (timeLeft === 0) return null;
 
   return (
     <motion.div
@@ -193,4 +188,4 @@ export function MessageBubble({ message, onReactionUpdate, onDeleteUpdate }: Mes
       </div>
     </motion.div>
   );
-}
+});

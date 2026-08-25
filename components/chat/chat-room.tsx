@@ -5,6 +5,7 @@ import { ChatMessage } from "@/types/chat";
 import { RoomWithDistance } from "@/types/location";
 import { getRoomMessagesAction } from "@/actions/chat.actions";
 import { joinPrivateRoomAction, deleteRoomAction } from "@/actions/room.actions";
+import { subscribeToRoomAction, unsubscribeFromRoomAction } from "@/actions/push.actions";
 import { MessageBubble } from "@/components/chat/message-bubble";
 import { ChatInput } from "@/components/chat/chat-input";
 import { TypingIndicator } from "@/components/chat/typing-indicator";
@@ -23,6 +24,8 @@ import ShareIcon from '@mui/icons-material/Share';
 import SendIcon from '@mui/icons-material/Send';
 import LockIcon from '@mui/icons-material/Lock';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import NotificationsOffIcon from '@mui/icons-material/NotificationsOff';
 
 const darkTheme = createTheme({
   palette: {
@@ -58,6 +61,8 @@ export function ChatRoom({ room }: ChatRoomProps) {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
+  const [showDisablePrompt, setShowDisablePrompt] = useState(false);
+  const [pushState, setPushState] = useState<"loading" | "unsupported" | "enabled" | "disabled" | "blocked">("loading");
 
   const router = useRouter();
   const { user } = useAuth();
@@ -114,13 +119,102 @@ export function ChatRoom({ room }: ChatRoomProps) {
   useEffect(() => {
     loadMessages();
 
-    if (typeof window !== "undefined" && "Notification" in window) {
-      const pref = localStorage.getItem(`room_notifications_${room.id}`);
-      if (!pref && Notification.permission !== "denied") {
-        setShowNotificationPrompt(true);
+    async function checkPush() {
+      if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+        setPushState("unsupported");
+        return;
+      }
+      if (Notification.permission === "denied") {
+        setPushState("blocked");
+        return;
+      }
+      
+      try {
+        const reg = await navigator.serviceWorker.register('/sw.js');
+        const sub = await reg.pushManager.getSubscription();
+        const roomPref = localStorage.getItem(`room_push_${room.id}`);
+        
+        if (sub && roomPref === "true") {
+          setPushState("enabled");
+        } else {
+          setPushState("disabled");
+        }
+      } catch (e) {
+        console.error("SW registration failed", e);
+        setPushState("unsupported");
       }
     }
+    
+    checkPush();
+    
+    // Also trigger prompt if they haven't explicitly chosen before and not denied
+    const pref = localStorage.getItem(`room_push_${room.id}`);
+    if (!pref && Notification.permission !== "denied" && "serviceWorker" in navigator) {
+      setShowNotificationPrompt(true);
+    }
   }, [room.id]);
+
+  const enablePushNotifications = async () => {
+    try {
+      if (Notification.permission === "default") {
+        const perm = await Notification.requestPermission();
+        if (perm !== "granted") {
+          setPushState("blocked");
+          setShowNotificationPrompt(false);
+          return;
+        }
+      } else if (Notification.permission === "denied") {
+        setPushState("blocked");
+        setShowNotificationPrompt(false);
+        return;
+      }
+
+      const reg = await navigator.serviceWorker.ready;
+      let sub = await reg.pushManager.getSubscription();
+      if (!sub) {
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+        });
+      }
+
+      const subJSON = sub.toJSON();
+      if (subJSON.endpoint && subJSON.keys) {
+        await subscribeToRoomAction(room.id, {
+          endpoint: subJSON.endpoint,
+          keys: {
+            p256dh: subJSON.keys.p256dh,
+            auth: subJSON.keys.auth
+          }
+        });
+      }
+      
+      localStorage.setItem(`room_push_${room.id}`, "true");
+      setPushState("enabled");
+      setShowNotificationPrompt(false);
+    } catch (e) {
+      console.error(e);
+      alert("Failed to enable notifications");
+    }
+  };
+
+  const disablePushNotifications = async () => {
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        const subJSON = sub.toJSON();
+        if (subJSON.endpoint) {
+          await unsubscribeFromRoomAction(room.id, subJSON.endpoint);
+        }
+      }
+      localStorage.setItem(`room_push_${room.id}`, "false");
+      setPushState("disabled");
+      setShowDisablePrompt(false);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   // Realtime subscription
   useRealtime(`room:${room.id}`, (data, ev) => {
@@ -131,19 +225,6 @@ export function ChatRoom({ room }: ChatRoomProps) {
         return [...prev, newMsg];
       });
       setTimeout(() => scrollToBottom(true), 50);
-
-      const roomNotificationsEnabled = localStorage.getItem(`room_notifications_${room.id}`) === "true";
-
-      if (
-        roomNotificationsEnabled &&
-        newMsg.userId !== user?.userId &&
-        "Notification" in window &&
-        Notification.permission === "granted"
-      ) {
-        new Notification(`New message in ${room.name}`, {
-          body: `${newMsg.user.username}: ${newMsg.content}`
-        });
-      }
     } else if (ev.event === "message:reaction") {
       const updatedMsg = data as ChatMessage;
       setMessages((prev) => prev.map((m) => (m.id === updatedMsg.id ? updatedMsg : m)));
@@ -214,6 +295,25 @@ export function ChatRoom({ room }: ChatRoomProps) {
                 </IconButton>
               )}
 
+              <IconButton 
+                color="inherit" 
+                onClick={() => {
+                  if (pushState === "disabled") setShowNotificationPrompt(true);
+                  else if (pushState === "enabled") setShowDisablePrompt(true);
+                  else if (pushState === "blocked") alert("Notifications are blocked in your browser settings. Please unblock them to enable this feature.");
+                }}
+                disabled={pushState === "loading" || pushState === "unsupported"}
+                title={
+                  pushState === "enabled" ? "Notifications enabled" :
+                  pushState === "disabled" ? "Enable notifications" :
+                  pushState === "blocked" ? "Notifications blocked" : "Notifications unsupported"
+                }
+              >
+                {pushState === "enabled" ? <NotificationsActiveIcon color="primary" /> : 
+                 pushState === "disabled" ? <NotificationsIcon /> :
+                 <NotificationsOffIcon color="disabled" />}
+              </IconButton>
+
               <IconButton color="inherit" onClick={handleShare}>
                 <ShareIcon />
               </IconButton>
@@ -279,7 +379,7 @@ export function ChatRoom({ room }: ChatRoomProps) {
               )}
               <AnimatePresence>
                 {messages.map((msg) => (
-                  <MessageBubble key={msg.id} message={msg} onReactionUpdate={loadMessages} onDeleteUpdate={loadMessages} />
+                  <MessageBubble key={msg.id} message={msg} />
                 ))}
               </AnimatePresence>
             </Box>
@@ -311,7 +411,7 @@ export function ChatRoom({ room }: ChatRoomProps) {
         <Dialog
           open={showNotificationPrompt}
           onClose={() => {
-            localStorage.setItem(`room_notifications_${room.id}`, "false");
+            localStorage.setItem(`room_push_${room.id}`, "false");
             setShowNotificationPrompt(false);
           }}
           sx={{
@@ -335,7 +435,7 @@ export function ChatRoom({ room }: ChatRoomProps) {
             <Button 
               color="inherit"
               onClick={() => {
-                localStorage.setItem(`room_notifications_${room.id}`, "false");
+                localStorage.setItem(`room_push_${room.id}`, "false");
                 setShowNotificationPrompt(false);
               }}
             >
@@ -343,26 +443,46 @@ export function ChatRoom({ room }: ChatRoomProps) {
             </Button>
             <Button 
               variant="contained"
-              onClick={() => {
-                if (Notification.permission === "default") {
-                  Notification.requestPermission().then((perm) => {
-                    if (perm === "granted") {
-                      localStorage.setItem(`room_notifications_${room.id}`, "true");
-                    } else {
-                      localStorage.setItem(`room_notifications_${room.id}`, "false");
-                    }
-                    setShowNotificationPrompt(false);
-                  });
-                } else if (Notification.permission === "granted") {
-                  localStorage.setItem(`room_notifications_${room.id}`, "true");
-                  setShowNotificationPrompt(false);
-                } else {
-                  localStorage.setItem(`room_notifications_${room.id}`, "false");
-                  setShowNotificationPrompt(false);
-                }
-              }}
+              onClick={enablePushNotifications}
             >
               Enable
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        <Dialog
+          open={showDisablePrompt}
+          onClose={() => setShowDisablePrompt(false)}
+          sx={{
+            '& .MuiDialog-paper': {
+              bgcolor: 'background.paper',
+              backgroundImage: 'none',
+              border: '1px solid rgba(255,255,255,0.1)'
+            }
+          }}
+        >
+          <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <NotificationsOffIcon color="error" />
+            Disable Notifications?
+          </DialogTitle>
+          <DialogContent>
+            <DialogContentText sx={{ color: 'text.secondary' }}>
+              You will no longer receive push notifications for messages in <strong>{room.name}</strong>.
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions sx={{ p: 2, pt: 0 }}>
+            <Button 
+              color="inherit"
+              onClick={() => setShowDisablePrompt(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              color="error"
+              variant="contained"
+              onClick={disablePushNotifications}
+            >
+              Disable
             </Button>
           </DialogActions>
         </Dialog>

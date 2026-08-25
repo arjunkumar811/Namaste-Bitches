@@ -86,6 +86,7 @@ export class ChatService {
       },
       include: {
         user: true,
+        room: { select: { name: true } },
         reactions: { include: { user: true } },
       },
     });
@@ -94,6 +95,15 @@ export class ChatService {
 
     // Broadcast to room channel via zero-config SSE / polling
     await RealtimeService.broadcast(`room:${payload.roomId}`, "message:new", formatted);
+
+    // Fire and forget push notification
+    import("@/services/push.service").then(({ PushService }) => {
+      PushService.notifyRoom(payload.roomId, {
+        title: newMsg.room?.name || "Namaste Chat",
+        body: `Someone: ${payload.content}`,
+        url: `/room/${payload.roomId}`
+      });
+    }).catch(console.error);
 
     return formatted;
   }
