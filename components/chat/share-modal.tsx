@@ -37,7 +37,7 @@ export function ShareModal({ isOpen, onClose, roomName, roomId }: ShareModalProp
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
         transition={{ duration: 0.15 }}
-        className="w-full max-w-sm rounded-2xl bg-[#111216] border border-white/[0.1] shadow-2xl p-5 text-left space-y-4"
+        className="w-full max-w-sm max-h-[90dvh] overflow-y-auto rounded-2xl bg-[#111216] border border-white/[0.1] shadow-2xl p-5 text-left space-y-4"
       >
         <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
           <div className="flex items-center gap-2">

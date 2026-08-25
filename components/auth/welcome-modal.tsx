@@ -38,7 +38,7 @@ export function WelcomeModal() {
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
-        className="w-full max-w-md overflow-hidden rounded-2xl bg-[#111216] border border-white/[0.1] shadow-2xl p-6 sm:p-7 text-left"
+        className="w-full max-w-md max-h-[90dvh] overflow-y-auto rounded-2xl bg-[#111216] border border-white/[0.1] shadow-2xl p-6 sm:p-7 text-left"
       >
         <AnimatePresence mode="wait">
           {step === "promise" ? (

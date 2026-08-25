@@ -13,6 +13,7 @@ import { IdentityBadge } from "@/components/auth/identity-badge";
 import { ShareModal } from "@/components/chat/share-modal";
 import { useRealtime } from "@/hooks/use-realtime";
 import { useAuth } from "@/components/providers/auth-provider";
+import { urlBase64ToUint8Array } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { Users, Radio, Share2, Shield, Sparkles, MapPin, Lock, ArrowRight, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -172,29 +173,34 @@ export function ChatRoom({ room }: ChatRoomProps) {
       const reg = await navigator.serviceWorker.ready;
       let sub = await reg.pushManager.getSubscription();
       if (!sub) {
+        const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+        if (!vapidKey) {
+          throw new Error("VAPID public key is missing");
+        }
         sub = await reg.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+          applicationServerKey: urlBase64ToUint8Array(vapidKey)
         });
       }
 
       const subJSON = sub.toJSON();
       if (subJSON.endpoint && subJSON.keys) {
-        await subscribeToRoomAction(room.id, {
+        const res = await subscribeToRoomAction(room.id, {
           endpoint: subJSON.endpoint,
           keys: {
             p256dh: subJSON.keys.p256dh,
             auth: subJSON.keys.auth
           }
         });
+        if (!res.success) throw new Error(res.error || "Failed to save subscription on server");
       }
       
       localStorage.setItem(`room_push_${room.id}`, "true");
       setPushState("enabled");
       setShowNotificationPrompt(false);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      alert("Failed to enable notifications");
+      alert(`Failed to enable notifications: ${e.message || "Unknown error"}`);
     }
   };
 

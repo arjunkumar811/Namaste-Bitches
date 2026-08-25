@@ -77,7 +77,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md bg-[#0a0a0c] border border-white/10 text-white shadow-2xl">
+      <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto bg-[#0a0a0c] border border-white/10 text-white shadow-2xl">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold tracking-tight">Identity Settings</DialogTitle>
         </DialogHeader>

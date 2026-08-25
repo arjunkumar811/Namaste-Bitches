@@ -38,7 +38,7 @@ export default async function RoomPage({
   }
 
   return (
-    <div className="h-screen bg-black text-white flex flex-col overflow-hidden">
+    <div className="h-[100dvh] bg-black text-white flex flex-col overflow-hidden">
       <main className="flex-1 w-full h-full">
         <ChatRoom room={room} />
       </main>

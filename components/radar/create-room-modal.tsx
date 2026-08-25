@@ -79,7 +79,7 @@ export function CreateRoomModal({ isOpen, onClose, userLat, userLng, onRoomCreat
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
           transition={{ duration: 0.15 }}
-          className="w-full max-w-md p-6 rounded-2xl bg-[#111216] border border-white/[0.1] shadow-2xl text-left"
+          className="w-full max-w-md p-6 max-h-[90dvh] overflow-y-auto rounded-2xl bg-[#111216] border border-white/[0.1] shadow-2xl text-left"
         >
           <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-white/[0.08]">
             <div className="flex items-center gap-2.5">

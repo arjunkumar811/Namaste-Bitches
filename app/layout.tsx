@@ -36,7 +36,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <body
-        className={`${outfit.variable} ${jetbrainsMono.variable} font-sans antialiased bg-black text-zinc-100 selection:bg-emerald-500 selection:text-black min-h-screen flex flex-col`}
+        className={`${outfit.variable} ${jetbrainsMono.variable} font-sans antialiased bg-black text-zinc-100 selection:bg-emerald-500 selection:text-black min-h-[100dvh] flex flex-col`}
         suppressHydrationWarning
       >
         <AuthProvider>
